@@ -3,7 +3,7 @@
         		   int i=loc;
 			   char *fbp=(char* )i;
 			   	*((char *)(fbp)) =(char)b;
-			   	*((char *)(fbp+1)) =(char)0x17;		  
+			   	*((char *)(fbp+1)) =(char)0x71;		  
         }
  void _start()
         {
