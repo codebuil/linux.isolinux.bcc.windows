@@ -1,139 +1,270 @@
 // need file libdos.c to be compile in directory
 //bcc -x -i -L -Md hello.c -o HELLO.COM
 #define varn 0x0080
-void sstr(i,s);
-void sputc(cc);
-void sputs(cc);
-int bits(value,n);
-void tobin(value,txt);
-int main(){
-	int k=0;
-	int kk=0;
-	unsigned int n=0;
-	char s[80];
-		for (k=0;k<16;k++){
-			n=bset(n,k);
-			sstr(k,s);
-			sputs(s);
-			sputs("	-	$");
-			tobin(k,s);
-			sputs(s);
-			sputs("\r\n\0$");
-			n=breset(n,k);
-		}
+#define smallG 0x13
+#define VIDEO 0xA000
+#define stdout 0 
+#define lpt 2 
+#define com1 3 
+#define blue 1
+#define brish 8
+#define black 0
+#define white 15
+struct win{
+	int x;
+	int y;
+	int w;
+	int h;
+	int color;
+};
+int VID;
+int ii;
+void screens(n);
+int getptr();
+void backs(address,count,color);
+void refresh(address,count,addr2);
+void hline(hlinex,hliney,hlinex1,hliney1,color);
+void rect(rectx,recty,rectx1,recty1,color);
+void vline(vlinex,vliney,vlinex1,vliney1,color);
+void drawWindows(x,y,w,h,color);
 
+int main(){
+	int n;
+	int x=10;
+	int y=10;
+	int x1=150;
+	int y1=100;
+	int color=2;
+	int unsigned size=320*200; 
+	char c[80];
+	struct win w[8];
+	VID=getptr()+0X2000;
+	screens(smallG);
+	backs(VID,(int)size,blue+brish);
+	for (n=0;n<319;n=n+8){
+		vline(n,0,n,199,blue);
+	}
+	for (n=0;n<199;n=n+8){
+		hline(0,n,319,n,blue);
+	}
+	for (n=0;n<8;n++){
+		w[n].x=n*10+10;
+		w[n].y=n*10+10;
+		w[n].w=150;
+		w[n].h=50;
+		w[n].color=white;
+		
+	}
+	for (n=0;n<8;n++){
+			drawWindows(w[n].x,w[n].y,w[n].w,w[n].h,w[n].color);
+	}
+
+	refresh(VIDEO,size,VID);
 		asm	"db 0xb4,0,0xcd,0x21";
 		
 	return 0;
 }
 
-void sputc(cc)
-char cc;
+
+
+void screens(n)
+int n;
 {
 	int *c;
 	c = (int * ) varn;
-	*(c + 0) = cc;
+	*(c + 0) = n;
 
-	asm	"db 0xbb,0x80,0x0,0x2e,0x8a,0x17,0xb4,0x02,0xcd,0x21";
+
+	asm	"db 0x1E,0x56,0x8C,0xC8,0x8E,0xD8,0xBE,0x80,0x00,0x2E,0x8A,0x04,0xB4,0x00,0xCD,0x10,0x5E,0x1F";
 }
-void sstr(i,s)
-unsigned int i;
-char *s;
+
+
+
+int getptr()
 {
-	int n=0;
-	int i10=10;
-	int start=10000;
-	int state=0;
-	int sss=0;
-	int remain=0;
-	int boo=0;
-	char *cursor;
-	char cc;
-	sss=i;
-	cursor=s;
+	int *c;
+	c = (int * ) varn;
+
+	asm	"db 0x8C,0xC8,0x2E,0xA3,0x80,0x0";
+	return *(c + 0);
+}
+
+void backs(address,count,color)
+int address;
+int count;
+int color;
+{
+	int *c;
+	c = (int * ) varn;
+	*(c + 0)=address;
+	*(c + 1)=count;
+	*(c + 2)=color;
+	asm	"db 0x1E,0x06,0x0E,0x1F,0x8B,0x0E,0x82,0x00,0x8B,0x16,0x84,0x00,0xA1,0x80,0x00,0x50,0x07,0x88,0xD0,0x31,0xD2,0x89,0xD7,0x90,0xFC,0xF3,0xAA,0x07,0x1F";
 	
-	for (n=0;n<5;n++){
-		if(n>3)boo=1;
-		state=sss/start;
-		remain=sss-(state*start);
-		sss=remain;
-		cc=(char) state+'0';
-		if(cc!='0')boo=1;
-		if(boo==1)cursor[0]=cc;
-		start=start/i10;
-		if(boo==1)cursor++;
+}
+
+
+void refresh(address,count,addr2)
+int address;
+int count;
+int addr2;
+{
+	int *c;
+	c = (int * ) varn;
+	*(c + 0)=address;
+	*(c + 1)=count;
+	*(c + 2)=addr2;
+	asm	"db 0x1E,0x06,0x0E,0x1F,0x8B,0x1E,0x84,0x00,0x8B,0x0E,0x82,0x00,0xA1,0x80,0x00,0x50,0x07,0x53,0x1F,0x31,0xD2,0x89,0xD6,0x89,0xD7,0x90,0xFC,0xF3,0xA4,0x07,0x1F";
+	
+}
+
+void hline(hlinex,hliney,hlinex1,hliney1,color)
+int hlinex;
+int hliney;
+int hlinex1;
+int hliney1;
+int color;
+{
+	int ir;
+	int xx;
+	int yy;
+	int xx1;
+	int yy1;
+	int xxx;
+	int yyy;
+	int xxa;
+	int *c;
+	c = (int * ) varn;
+	xx=hlinex;
+	yy=hliney;
+	xx1=hlinex1;
+	yy1=hliney1;
+	if (xx>319)xx=319;
+	if (xx1>319)xx1=319;
+	if (yy>199)yy=199;
+	if (yy1>199)yy1=199;
+	if (xx<0)xx=0;
+	if (xx1<0)xx1=0;
+	if (yy<0)yy=0;
+	if (yy1<0)yy1=0;
+	if (xx<=xx1 && yy==yy1){
+		xxa=xx1-xx;
+		if (xxa<1)xxa=1;
+		yyy=yy1-yy;
+		xxx=yy*320+xx;
+		*(c + 0)=VID;
+		*(c + 1)=xxx;
+		*(c + 2)=xxa;
+		*(c + 3)=color;
+		asm	"db 0x1E,0x06,0x0E,0x1F,0x8B,0x3E,0x82,0x00,0x8B,0x16,0x86,0x00,0x8B,0x0E,0x84,0x00,0xA1,0x80,0x00,0x50,0x07,0x88,0xD0,0x31,0xD2,0x90,0xFC,0xF3,0xAA,0x07,0x1F";
 	}
-	cursor[0]=0;
 }
 
-void sputs(cc)
-char *cc;
+void rect(rectx,recty,rectx1,recty1,color)
+int rectx;
+int recty;
+int rectx1;
+int recty1;
+int color;
 {
-		int i=0;
-while(cc[i]!=0){
-		sputc(cc[i]);
-		i++;
-}
+	int r;
+	int ir;
+	int xx;
+	int yy;
+	int nx;
+	int ny;
+	int xx1;
+	int yy1;
+	int xxx;
+	int yyy;
+	int xxa;
+	int *c;
+	int gg=0;
+	c = (int * ) varn;
+	xx=rectx;
+	yy=recty;
+	xx1=rectx1;
+	yy1=recty1;
+	if (xx>319)xx=319;
+	if (xx1>319)xx1=319;
+	if (yy>199)yy=199;
+	if (yy1>199)yy1=199;
+	if (xx<0)xx=0;
+	if (xx1<0)xx1=0;
+	if (yy<0)yy=0;
+	if (yy1<0)yy1=0;
+	if (xx<=xx1 && yy<=yy1){
+		xxa=xx1-xx;
+		if (xxa<1)xxa=1;
+		yyy=yy1-yy;
+		xxx=yy*320+xx;
+		nx=320-xxa;
+		*(c + 0)=VID;
+		*(c + 1)=xxx;
+		*(c + 2)=xxa;
+		*(c + 3)=nx;
+		*(c + 4)=yyy;
+		*(c + 5)=color;
+	}	
+	if (xx<=xx1 && yy<=yy1){
+		asm	"db 0x1E,0x06,0x0E,0x1F,0x8B,0x3E,0x82,0x00,0x8B,0x36,0x86,0x00,0x8B";
+		asm "db 0x16,0x8A,0x00,0x8B,0x1E,0x88,0x00,0x8B,0x0E,0x84,0x00,0xA1,0x80,0x00";
+		asm "db 0x50,0x07,0x88,0xD0,0x31,0xD2,0x51,0x90,0x59,0x51,0x90,0xFC,0xF3,0xAA";
+		asm "db 0xF8,0x01,0xF7,0x4B,0x39,0xD3,0x75,0xF1,0x58,0x07,0x1F";
+	}		
+	
 }
 
-void tobin(value,txt)
-unsigned int value;
-char *txt;
+void vline(vlinex,vliney,vlinex1,vliney1,color)
+int vlinex;
+int vliney;
+int vlinex1;
+int vliney1;
+int color;
 {
-	int n;
-	int i;
-	for(n=0;n<17;n++)txt[n]='0';
-	for(n=0;n<16;n++){
-		i=bits(value,n);
-		if(i!=0)txt[15-n]='1';
+	int ir;
+	int xx;
+	int yy;
+	int xx1;
+	int yy1;
+	int xxx;
+	int yyy;
+	int xxa;
+	int *c;
+	c = (int * ) varn;
+	xx=vlinex;
+	yy=vliney;
+	xx1=vlinex1;
+	yy1=vliney1;
+	if (xx>319)xx=319;
+	if (xx1>319)xx1=319;
+	if (yy>199)yy=199;
+	if (yy1>199)yy1=199;
+	if (xx<0)xx=0;
+	if (xx1<0)xx1=0;
+	if (yy<0)yy=0;
+	if (yy1<0)yy1=0;
+	if (xx==xx1 && yy<=yy1){
+		xxa=yy1-yy;
+		if (xxa<1)xxa=1;
+		yyy=yy1-yy;
+		xxx=yy*320+xx;
+		*(c + 0)=VID;
+		*(c + 1)=xxx;
+		*(c + 2)=xxa;
+		*(c + 3)=color;
+		*(c + 4)=320;
 	}
-	txt[16]=0;
-	txt[17]='$';
-}
-int bits(value,n)
-unsigned int value;
-int n;
-{
-	static unsigned int bitv[]={1,2,4,8,16,32,64,128,256,512,1024,2048,4096,8192,16384,0x8000,0,0};
-	unsigned int nn;
-	unsigned nnn;
-	unsigned nnnn;
-	nnnn=value;
-	nn=value & 0x7fff;
-	nn=nn & bitv[n];
-	if(nn!=0)nn=1;
-	if (n==15 && value>0x7fff){
-		nn=1;
+	if (xx==xx1 && yy<=yy1){
+		asm	"db 0x1E,0x06,0x0E,0x1F,0x8B,0x36,0x88,0x00,0x8B,0x16,0x86,0x00,0x8B,0x3E,0x82,0x00,0x8B,0x0E,0x84,0x00,0xA1,0x80,0x00,0x50,0x07,0x88,0xD0,0x31,0xD2,0x90,0x26,0x88,0x05,0xF8,0x01,0xF7,0x49,0x83,0xF9,0x00,0x75,0xF3,0x07,0x1F";
 	}
-	if (n==15 && value<0x8000){
-		nn=0;
-	}
-	return nn;
-}
-
-int bset(value,n)
-int value;
-int n;
-{
-	static unsigned int bitv[]={1,2,4,8,16,32,64,128,256,512,1024,2048,4096,8192,16384,0x8000,0,0};
-	int nn;
-	nn=value;
-	nn=nn | bitv[n];
-	return nn;
-}
-
-int breset(value,n)
-int value;
-int n;
-{
-	static unsigned int bitv[]={1,2,4,8,16,32,64,128,256,512,1024,2048,4096,8192,16384,0x8000,0,0};
-	int nn;
-	int n1;
-	nn=value;
-	n1=~bitv[n];
-	nn=nn & n1;
-	return nn;
 }
 
 
-
+void drawWindows(x,y,w,h,color){
+	rect(x,y,x+w,y+h,color);
+	hline(x,y,x+w,y,black);
+	vline(x+w,y,x+w,y+h,black);
+	hline(x,y+h,x+w,y+h,black);
+	vline(x,y,x,y+h,black);
+}
